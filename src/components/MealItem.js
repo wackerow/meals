@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   ImageBackground
 } from 'react-native';
+import DefaultText from './DefaultText';
+import Colors from '../constants/Colors';
 
 const MealItem = ({
   title,
@@ -18,7 +20,7 @@ const MealItem = ({
   return (
     <View style={styles.mealItem}>
       <TouchableOpacity onPress={onSelect}>
-        <View style={styles.column}>
+        <View>
           <View style={[styles.mealRow, styles.mealHeader]}>
             <ImageBackground source={{ uri: image }} style={styles.bgImage}>
               <Text style={styles.title} numberOfLines={1}>
@@ -27,9 +29,9 @@ const MealItem = ({
             </ImageBackground>
           </View>
           <View style={[styles.mealRow, styles.mealDetail]}>
-            <Text>{duration} min</Text>
-            <Text>{complexity.toUpperCase()}</Text>
-            <Text>{affordability.toUpperCase()}</Text>
+            <DefaultText>{duration} min</DefaultText>
+            <DefaultText>{complexity.toUpperCase()}</DefaultText>
+            <DefaultText>{affordability.toUpperCase()}</DefaultText>
           </View>
         </View>
       </TouchableOpacity>
@@ -41,12 +43,11 @@ const styles = StyleSheet.create({
   mealItem: {
     height: 200,
     // width: '90%',
-    backgroundColor: '#ddd',
+    backgroundColor: Colors.secondary + '33',
     borderRadius: 15,
     overflow: 'hidden',
     margin: 15
   },
-  column: {},
   bgImage: {
     width: '100%',
     height: '100%',

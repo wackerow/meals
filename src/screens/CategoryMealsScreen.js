@@ -1,41 +1,40 @@
 import React from 'react';
-import { View, Text, StyleSheet, Button, FlatList } from 'react-native';
-import { CATEGORIES, MEALS } from '../data/dummy-data';
-import MealItem from '../components/MealItem';
+import { useSelector } from 'react-redux';
+import { StyleSheet, View, TouchableOpacity } from 'react-native';
+
+import { CATEGORIES } from '../data/dummy-data';
+import MealList from '../components/MealList';
+import DefaultText from '../components/DefaultText';
+import { Ionicons } from '@expo/vector-icons';
+import Colors from '../constants/Colors';
 
 const CategoryMealsScreen = ({ navigation }) => {
   const catId = navigation.getParam('categoryId');
 
-  const displayedMeals = MEALS.filter(
+  // Select slice of STATE: .meals from rootReducer, .filteredMeals from meals reducer:
+  const availableMeals = useSelector(state => state.meals.filteredMeals);
+
+  const displayedMeals = availableMeals.filter(
     meal => meal.categoryIds.indexOf(catId) >= 0
   );
 
-  const renderMealItem = ({ item }) => {
-    return (
-      <MealItem
-        title={item.title}
-        onSelect={() => {
-          navigation.navigate('MealDetail', {
-            mealId: item.id
-          });
-        }}
-        duration={item.duration}
-        complexity={item.complexity}
-        affordability={item.affordability}
-        image={item.imageUrl}
-      />
-    );
-  };
-
-  return (
-    <View style={styles.container}>
-      <FlatList
-        keyExtractor={item => item.id}
-        data={displayedMeals}
-        renderItem={renderMealItem}
-        style={styles.flatList}
-      />
+  const FallbackView = () => (
+    <View style={styles.fallbackView}>
+      <DefaultText style={styles.fallbackText}>No matches!</DefaultText>
+      <DefaultText style={styles.fallbackText}>
+        Try removing some filters!
+      </DefaultText>
+      <TouchableOpacity onPress={navigation.toggleDrawer}>
+        <Ionicons name='ios-menu' size={100} color={Colors.primary} />
+      </TouchableOpacity>
     </View>
+  );
+
+  // Check for empty array:
+  return displayedMeals.length === 0 ? (
+    <FallbackView />
+  ) : (
+    <MealList displayedMeals={displayedMeals} navigation={navigation} />
   );
 };
 
@@ -47,13 +46,15 @@ CategoryMealsScreen.navigationOptions = navigationData => {
 };
 
 const styles = StyleSheet.create({
-  container: {
+  fallbackView: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center'
   },
-  flatList: {
-    width: '100%'
+  fallbackText: {
+    fontSize: 24,
+    textAlign: 'center',
+    paddingBottom: 30
   }
 });
 

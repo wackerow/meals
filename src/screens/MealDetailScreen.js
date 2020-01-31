@@ -1,68 +1,118 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  ImageBackground
-} from 'react-native';
-import { MEALS } from '../data/dummy-data';
-import FavoriteIcon from '../components/FavoriteIcon';
-
+import React, { useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import { HeaderButtons, Item } from 'react-navigation-header-buttons'; // --plural--
+import { useSelector, useDispatch } from 'react-redux';
+
+import HeaderButton from '../components/HeaderButton';
+import DefaultText from '../components/DefaultText';
+import Colors from '../constants/Colors';
+import { toggleFavorite } from '../store/actions/meals';
+
+const ListItem = ({ children }) => {
+  return (
+    <View style={styles.listItem}>
+      <DefaultText>{children}</DefaultText>
+    </View>
+  );
+};
 
 const MealDetailScreen = ({ navigation }) => {
+  const availableMeals = useSelector(state => state.meals.meals);
   const mealId = navigation.getParam('mealId');
-  const meal = MEALS.find(meal => meal.id === mealId);
+  const isFavoriteMeal = useSelector(state =>
+    state.meals.favoriteMeals.some(meal => meal.id === mealId)
+  );
+  const meal = availableMeals.find(meal => meal.id === mealId);
+
+  const dispatch = useDispatch();
+  const toggleFavoriteHandler = useCallback(() => {
+    dispatch(toggleFavorite(mealId));
+  }, [dispatch, mealId]);
+
+  useEffect(() => {
+    navigation.setParams({ toggleFavorite: toggleFavoriteHandler });
+  }, [toggleFavoriteHandler]);
+
+  useEffect(() => {
+    navigation.setParams({ isFavorite: isFavoriteMeal });
+  }, [isFavoriteMeal]);
 
   return (
     <View style={styles.screen}>
-      <View style={styles.imageView}>
-        <ImageBackground source={{ uri: meal.imageUrl }} style={styles.image} />
-      </View>
-      <ScrollView style={styles.container}>
+      <Image source={{ uri: meal.imageUrl }} style={styles.image} />
+      <ScrollView style={styles.scrollContainer}>
+        <View style={styles.quickDetails}>
+          <DefaultText style={styles.quickDetailsText}>
+            {meal.duration} min
+          </DefaultText>
+          <DefaultText style={styles.quickDetailsText}>
+            {meal.complexity.toUpperCase()}
+          </DefaultText>
+          <DefaultText style={styles.quickDetailsText}>
+            {meal.affordability.toUpperCase()}
+          </DefaultText>
+        </View>
         <View style={{ padding: 10 }}>
-          <Text>Ingredients:</Text>
+          <Text style={styles.title}>Ingredients</Text>
           {meal.ingredients.map(item => (
-            <Text> • {item}</Text>
+            <ListItem key={item}>{item}</ListItem>
           ))}
         </View>
         <View style={{ padding: 10 }}>
-          <Text>Steps to perfection:</Text>
-          {meal.steps.map(item => (
-            <Text> • {item}</Text>
+          <Text style={styles.title}>Steps to perfection</Text>
+          {meal.steps.map((item, index) => (
+            <ListItem key={item}>
+              Step {index + 1}: {item}
+            </ListItem>
           ))}
         </View>
-        {meal.isGlutenFree ? <Text>Gluten Free</Text> : null}
-        {meal.isLactoseFree ? <Text>Lactose Free</Text> : null}
-        {meal.isVegetarian && !meal.isVegan ? <Text>Vegetarian</Text> : null}
-        {meal.isVegan ? <Text>Vegan</Text> : null}
-        <Text>Est. time: {meal.duration} min</Text>
+        <View style={styles.bottomIcons}>
+          {meal.isGlutenFree ? (
+            <Image
+              source={require('../../assets/glutenFree.png')}
+              style={{ width: 50, height: 50 }}
+            />
+          ) : null}
+          {meal.isLactoseFree ? (
+            <Image
+              source={require('../../assets/lactoseFree.png')}
+              style={{ width: 50, height: 50 }}
+            />
+          ) : null}
+          {meal.isVegetarian && !meal.isVegan ? (
+            <Image
+              source={require('../../assets/vegetarian.png')}
+              style={{ width: 50, height: 50 }}
+            />
+          ) : null}
+          {meal.isVegan ? (
+            <Image
+              source={require('../../assets/vegan.png')}
+              style={{ width: 50, height: 50 }}
+            />
+          ) : null}
+        </View>
       </ScrollView>
     </View>
   );
 };
 
 MealDetailScreen.navigationOptions = navigationData => {
-  const mealId = navigationData.navigation.getParam('mealId');
-  const meal = MEALS.find(meal => meal.id === mealId);
+  const mealTitle = navigationData.navigation.getParam('mealTitle');
+  const toggleFavorite = navigationData.navigation.getParam('toggleFavorite');
+  const isFavorite = navigationData.navigation.getParam('isFavorite');
 
   return {
-    headerTitle: meal.title,
-    headerRight: (
-      <HeaderButtons HeaderButtonComponent={FavoriteIcon}>
+    headerTitle: mealTitle,
+    headerRight: () => (
+      <HeaderButtons HeaderButtonComponent={HeaderButton}>
         <Item
           title='Fav'
-          iconName='ios-heart'
-          onPress={() => {
-            console.log('mark as favorite');
-          }}
+          iconName={isFavorite ? 'ios-heart' : 'ios-heart-empty'}
+          onPress={toggleFavorite}
         />
       </HeaderButtons>
     )
-    // headerRight: () => {
-    //   return <FavoriteIcon onPress={() => {}} />;
-    // }
   };
 };
 
@@ -72,14 +122,43 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     alignItems: 'flex-start'
   },
-  imageView: {
-    height: 200
-  },
   image: {
     width: '100%',
-    height: '100%'
+    height: 200
   },
-  container: {}
+  quickDetails: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 5,
+    backgroundColor: Colors.secondary + '33'
+  },
+  quickDetailsText: {
+    color: Colors.primary
+  },
+  scrollContainer: {
+    width: '100%'
+  },
+  title: {
+    fontFamily: 'open-sans-bold',
+    fontSize: 20,
+    textAlign: 'center'
+  },
+  listItem: {
+    marginVertical: 10,
+    marginHorizontal: 12,
+    padding: 10,
+    borderColor: '#666',
+    borderWidth: 1,
+    borderRadius: 5
+  },
+  bottomIcons: {
+    width: '100%',
+    paddingHorizontal: 15,
+    paddingBottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-evenly'
+  }
 });
 
 export default MealDetailScreen;
